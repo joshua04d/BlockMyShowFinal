@@ -1,25 +1,19 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { PrivyProvider } from '@privy-io/react-auth'
+import { ClerkProvider } from '@clerk/clerk-react'
 import './index.css'
 import App from './App.jsx'
 
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+
+if (!PUBLISHABLE_KEY) {
+  throw new Error('Missing Clerk Publishable Key')
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <PrivyProvider
-      appId="cmmpxt4qq02vo0cl4ag72e43v"
-      config={{
-        loginMethods: ['email', 'google'],
-        appearance: {
-          theme: 'dark',
-          accentColor: '#7c3aed',
-        },
-        embeddedWallets: {
-          createOnLogin: 'users-without-wallets',
-        },
-      }}
-    >
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
       <App />
-    </PrivyProvider>
+    </ClerkProvider>
   </StrictMode>,
 )

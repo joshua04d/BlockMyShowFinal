@@ -1,16 +1,9 @@
 import { Link } from 'react-router-dom'
+import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
 import { useWallet } from '../hooks/useWallet'
 
 export default function Navbar() {
-  const {
-    ready,
-    isConnected,
-    isOnSepolia,
-    shortAddress,
-    login,
-    logout,
-    switchToSepolia,
-  } = useWallet()
+  const { isConnected } = useWallet()
 
   return (
     <nav className="navbar">
@@ -20,28 +13,21 @@ export default function Navbar() {
 
       <div className="navbar-links">
         <Link to="/">Home</Link>
-        {isConnected && <Link to="/events">Events</Link>}
-        {isConnected && <Link to="/my-tickets">My Tickets</Link>}
-        {isConnected && <Link to="/resale">Resale</Link>}
+        <SignedIn>
+          <Link to="/events">Events</Link>
+          <Link to="/my-tickets">My Tickets</Link>
+          <Link to="/resale">Resale</Link>
+        </SignedIn>
 
-        {!ready ? (
-          <button className="btn btn-outline" disabled>Loading...</button>
-        ) : !isConnected ? (
-          <button className="btn btn-primary" onClick={login}>
-            🎟 Sign In
-          </button>
-        ) : !isOnSepolia ? (
-          <button className="btn btn-danger" onClick={switchToSepolia}>
-            ⚠️ Switch to Sepolia
-          </button>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span className="wallet-address">{shortAddress}</span>
-            <button className="btn btn-outline" onClick={logout}>
-              Sign Out
-            </button>
-          </div>
-        )}
+        <SignedOut>
+          <SignInButton mode="modal">
+            <button className="btn btn-primary">Sign In</button>
+          </SignInButton>
+        </SignedOut>
+
+        <SignedIn>
+          <UserButton afterSignOutUrl="/" />
+        </SignedIn>
       </div>
     </nav>
   )

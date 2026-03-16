@@ -1,31 +1,27 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ethers } from 'ethers'
-import { useWallet } from '../hooks/useWallet'
+import { SignInButton, SignedIn, SignedOut } from '@clerk/clerk-react'
 import { ADDRESSES, EVENT_MANAGER_ABI } from '../contracts/addresses'
-
-const RPC = 'https://rpc.sepolia.org'
 
 const STATUS_LABELS = ['Pending', 'Active', 'Completed', 'Cancelled']
 const STATUS_CLS    = ['badge-pending', 'badge-active', 'badge-complete', 'badge-cancelled']
 
 export default function Landing() {
-  const { isConnected, login } = useWallet()
-  const navigate               = useNavigate()
-  const [events, setEvents]    = useState([])
-  const [loading, setLoading]  = useState(true)
-
-  // Redirect to events page if already logged in
-  useEffect(() => {
-    if (isConnected) navigate('/events')
-  }, [isConnected])
+  const navigate              = useNavigate()
+  const [events, setEvents]   = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => { fetchEvents() }, [])
 
   async function fetchEvents() {
     try {
       if (!ADDRESSES.EventManager) return
-      const provider = new ethers.JsonRpcProvider(RPC)
+      const key      = import.meta.env.VITE_ALCHEMY_KEY
+      const rpc      = key
+        ? `https://eth-sepolia.g.alchemy.com/v2/${key}`
+        : 'https://rpc.sepolia.org'
+      const provider = new ethers.JsonRpcProvider(rpc)
       const contract = new ethers.Contract(ADDRESSES.EventManager, EVENT_MANAGER_ABI, provider)
       const total    = await contract.totalEvents()
       const fetched  = []
@@ -41,34 +37,34 @@ export default function Landing() {
     }
   }
 
-  async function handleSignIn() {
-    await login()
-  }
-
   return (
     <div className="landing">
 
-      {/* ── Hero ── */}
+      {/* Hero */}
       <section className="hero-section">
-        <div className="hero-badge">⛓ Powered by Ethereum</div>
+        <div className="hero-badge">Powered by Ethereum</div>
         <h1 className="hero-title">
           The Future of<br />
           <span className="hero-accent">Live Events</span>
         </h1>
         <p className="hero-sub">
-          Buy, own, and resell tickets as NFTs. No scalpers. No fakes.<br />
+          Buy, own, and resell tickets as NFTs. No scalpers. No fakes.
           Your ticket lives on-chain — forever yours.
         </p>
         <div className="hero-actions">
-          <button className="btn btn-primary btn-lg" onClick={handleSignIn}>
-            🎟 Get Started
-          </button>
-          <a href="#events" className="btn btn-outline btn-lg">
-            See Events
-          </a>
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button className="btn btn-primary btn-lg">Get Started</button>
+            </SignInButton>
+          </SignedOut>
+          <SignedIn>
+            <button className="btn btn-primary btn-lg" onClick={() => navigate('/events')}>
+              Browse Events
+            </button>
+          </SignedIn>
+          <a href="#events" className="btn btn-outline btn-lg">See Events</a>
         </div>
 
-        {/* Stats */}
         <div className="hero-stats">
           <div className="stat">
             <span className="stat-num">100%</span>
@@ -87,34 +83,34 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── How it works ── */}
+      {/* How it works */}
       <section className="how-section">
         <h2 className="section-title">How It Works</h2>
         <div className="steps-grid">
           <div className="step-card">
             <div className="step-icon">🔐</div>
             <h3>Sign In</h3>
-            <p>Use Google or email. A wallet is created for you automatically — no crypto knowledge needed.</p>
+            <p>Use Google or email. A wallet is created for you automatically.</p>
           </div>
           <div className="step-card">
             <div className="step-icon">🎟</div>
             <h3>Buy a Ticket</h3>
-            <p>Purchase your ticket with ETH. It's minted as an NFT directly to your wallet on-chain.</p>
+            <p>Purchase with ETH. Minted as an NFT directly to your wallet.</p>
           </div>
           <div className="step-card">
             <div className="step-icon">📱</div>
             <h3>Show QR at Gate</h3>
-            <p>Your ticket generates a unique QR code. Scan it at the venue — instant, tamper-proof verification.</p>
+            <p>Your ticket generates a unique QR. Tamper-proof verification.</p>
           </div>
           <div className="step-card">
             <div className="step-icon">💸</div>
             <h3>Resell Fairly</h3>
-            <p>Can't make it? Resell your ticket at up to 10% above face value. No scalping, enforced on-chain.</p>
+            <p>Resell at up to 10% above face value. Enforced on-chain.</p>
           </div>
         </div>
       </section>
 
-      {/* ── Events teaser ── */}
+      {/* Events teaser */}
       <section className="events-section" id="events">
         <h2 className="section-title">Upcoming Events</h2>
         <p className="section-sub">Sign in to view full details and purchase tickets.</p>
@@ -141,24 +137,31 @@ export default function Landing() {
               return (
                 <div className="teaser-card" key={i}>
                   <div className="teaser-top">
-                    <span className={`badge ${STATUS_CLS[status]}`}>
-                      {STATUS_LABELS[status]}
-                    </span>
+                    <span className={`badge ${STATUS_CLS[status]}`}>{STATUS_LABELS[status]}</span>
                   </div>
                   <h3 className="teaser-name">{ev.name}</h3>
                   <p className="teaser-venue">📍 {ev.venue}</p>
                   <p className="teaser-date">🗓 {dateStr}</p>
                   <div className="teaser-footer">
                     <span className="teaser-seats">
-                      🎟 {Number(ev.totalSeats) - Number(ev.seatsSold)} seats left
+                      {Number(ev.totalSeats) - Number(ev.seatsSold)} seats left
                     </span>
-                    <button
-                      className="btn btn-primary"
-                      onClick={handleSignIn}
-                      disabled={status !== 1}
-                    >
-                      {status === 1 ? 'Sign in to Buy' : 'Unavailable'}
-                    </button>
+                    <SignedOut>
+                      <SignInButton mode="modal">
+                        <button className="btn btn-primary" disabled={status !== 1}>
+                          {status === 1 ? 'Sign in to Buy' : 'Unavailable'}
+                        </button>
+                      </SignInButton>
+                    </SignedOut>
+                    <SignedIn>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => navigate('/events')}
+                        disabled={status !== 1}
+                      >
+                        {status === 1 ? 'Buy Ticket' : 'Unavailable'}
+                      </button>
+                    </SignedIn>
                   </div>
                 </div>
               )
@@ -167,16 +170,23 @@ export default function Landing() {
         )}
       </section>
 
-      {/* ── CTA ── */}
+      {/* CTA */}
       <section className="cta-section">
         <h2>Ready to experience ticketing the right way?</h2>
         <p>Join BlockMyShow — where your ticket is truly yours.</p>
-        <button className="btn btn-primary btn-lg" onClick={handleSignIn}>
-          🎟 Sign In with Google
-        </button>
+        <SignedOut>
+          <SignInButton mode="modal">
+            <button className="btn btn-primary btn-lg">Sign In with Google</button>
+          </SignInButton>
+        </SignedOut>
+        <SignedIn>
+          <button className="btn btn-primary btn-lg" onClick={() => navigate('/events')}>
+            Browse Events
+          </button>
+        </SignedIn>
       </section>
 
-      {/* ── Footer ── */}
+      {/* Footer */}
       <footer className="footer">
         <p>Built on Ethereum Sepolia · ERC-721 NFT Tickets · <span style={{ color: 'var(--accent-lt)' }}>BlockMyShow</span></p>
       </footer>

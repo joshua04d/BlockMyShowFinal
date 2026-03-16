@@ -172,7 +172,7 @@ describe("BlockMyShow", function () {
       const overPrice = ethers.parseEther("0.12");
       await expect(
         ticketResale.connect(buyer).listTicket(1, overPrice)
-      ).to.be.revertedWith("Price exceeds 10% resale cap");
+      ).to.be.revertedWith("Price exceeds resale cap");
     });
 
     it("buyer2 can purchase listed ticket", async () => {

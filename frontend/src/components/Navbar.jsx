@@ -1,9 +1,16 @@
 import { Link } from 'react-router-dom'
 import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
-import { useWallet } from '../hooks/useWallet'
+import { useMetaMask } from '../hooks/useMetaMask'
 
 export default function Navbar() {
-  const { isConnected } = useWallet()
+  const {
+    isConnected,
+    isOnSepolia,
+    shortAddress,
+    connecting,
+    connect,
+    switchToSepolia,
+  } = useMetaMask()
 
   return (
     <nav className="navbar">
@@ -26,6 +33,21 @@ export default function Navbar() {
         </SignedOut>
 
         <SignedIn>
+          {!isConnected ? (
+            <button
+              className="btn btn-outline"
+              onClick={() => connect()}
+              disabled={connecting}
+            >
+              {connecting ? <span className="spinner" /> : 'Connect Wallet'}
+            </button>
+          ) : !isOnSepolia ? (
+            <button className="btn btn-danger" onClick={switchToSepolia}>
+              Switch to Sepolia
+            </button>
+          ) : (
+            <span className="wallet-address">{shortAddress}</span>
+          )}
           <UserButton afterSignOutUrl="/" />
         </SignedIn>
       </div>
